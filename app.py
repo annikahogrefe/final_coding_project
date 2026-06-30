@@ -4,8 +4,13 @@ import streamlit as st
 st.set_page_config(page_title="PyFit", page_icon="💪")
 
 # App Headers
-st.title("🏋️‍♂️ Your Personal Workout Planner")
+st.title("PyFit 🏋️‍♂️ Your Personal Workout Planner")
 st.write("Welcome! Answer the questions below, and we will build a custom routine for you.")
+
+# Browser Tab Display
+st.set_page_config(
+    page_title="PyFit",
+    page_icon="💪")
 
 # visual divider line to keep things clean
 st.divider()
