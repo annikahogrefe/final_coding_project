@@ -1,46 +1,353 @@
 import streamlit as st
+import random
+from exercises import EXERCISE_DB
 
 # Page Configuration
-st.set_page_config(page_title="PyFit", page_icon="💪")
+st.set_page_config(page_title="PyFit", page_icon="💪", layout="centered")
 
 # App Headers
 st.title("PyFit 🏋️‍♂️ Your Personal Workout Planner")
 st.write("Welcome! Answer the questions below, and we will build a custom routine for you.")
 
-# Browser Tab Display
-st.set_page_config(
-    page_title="PyFit",
-    page_icon="💪")
-
-# visual divider line to keep things clean
 st.divider()
 
-# Question 1: Fitness Goals
+# Question 1: Fitness Goal
 st.header("1. What is your goal?")
 goal = st.selectbox(
     "Select your primary fitness objective:",
     ["Build Muscle", "Increase Strength", "Lose Body Fat / Toning", "Improve Endurance"]
 )
 
-# Question 2: Frequency
-st.header("2. Availability")
+# Goal Prescriptions Map (Sets, Reps, Rest)
+GOAL_PARAMS = {
+    "Increase Strength": {"sets": "4-5", "reps": "3-5 reps", "rest": "2-3 mins"},
+    "Build Muscle": {"sets": "3-4", "reps": "8-12 reps", "rest": "60-90 secs"},
+    "Lose Body Fat / Toning": {"sets": "3-4", "reps": "12-15 reps", "rest": "45-60 secs"},
+    "Improve Endurance": {"sets": "3", "reps": "15-20 reps", "rest": "30-45 secs"}
+}
+
+# Goal-Specific Fitness Tips
+CATEGORY_TIPS = {
+    "Build Muscle": [
+        "🥩 **Target Protein Intake:** Aim for 1.6–2.2g of protein per kg of body weight daily to maximize muscle protein synthesis.",
+        "📊 **Track Progressive Overload:** Keep a workout log! Adding 1 rep, 1 kg, or improving control week-over-week drives hypertrophy.",
+        "💤 **Sleep is Where Muscle Grows:** GH (Growth Hormone) spikes during deep sleep. Prioritize 7–9 hours of uninterrupted rest.",
+        "🍌 **Post-Workout Carbs:** Pair post-workout protein with fast-digesting carbs to replenish glycogen stores and drive nutrients into muscle cells."
+    ],
+    "Increase Strength": [
+        "⏱️ **Rest Longer Between Sets:** Take 2.5–5 minutes between heavy compound sets to fully restore ATP energy for maximum exertion.",
+        "🏋️ **Prioritize Big Compounds:** Focus your initial energy on squats, deadlifts, presses, and rows before moving to isolation lifts.",
+        "🛡️ **Brace Your Core:** On heavy lifts, use the Valsalva maneuver (inhale deep into your belly and brace) to stabilize your spine.",
+        "🔄 **Deload Every 6–8 Weeks:** Periodically reduce volume or intensity by 30–50% for a week to clear fatigue and protect your joints."
+    ],
+    "Lose Body Fat / Toning": [
+        "🥗 **High-Volume, Low-Calorie Foods:** Fill half your plate with leafy greens, broccoli, or berries to stay full on fewer calories.",
+        "🥩 **Prioritize Protein on Deficits:** Protein has the highest thermic effect of food (20–30% of calories burned during digestion) and prevents muscle loss.",
+        "🚶 **Maximize Daily NEAT:** Walking 8,000–10,000 steps daily burns more total calories over time than a single cardio session.",
+        "💧 **Drink Water Before Meals:** Drinking 500ml of water 15 minutes before meals increases satiety and prevents overeating."
+    ],
+    "Improve Endurance": [
+        "🍌 **Intra-Workout Fuel:** For sessions lasting over 60 minutes, consume 30–60g of easy carbs (gels or sports drinks) per hour.",
+        "🏃 **Zone 2 Cardio:** Keep 80% of your cardio at a conversational pace (Zone 2) to build mitochondrial density without burning out.",
+        "🧂 **Replenish Electrolytes:** Sodium, potassium, and magnesium lost through sweat are crucial for preventing muscle cramps.",
+        "🧘 **Active Recovery Walks:** Light 20-minute walks on off days enhance blood flow to speed up muscle flushing and recovery."
+    ],
+    "General": [
+        "☕ **Caffeine Cutoff:** Avoid caffeine 8 hours before bed to prevent disrupting deep sleep quality.",
+        "🧊 **Morning Hydration:** Drinking 500ml of water immediately upon waking jumpstarts digestion and cognitive performance."
+    ]
+}
+
+
+def get_random_tip_for_goal(selected_goal):
+    goal_tips = CATEGORY_TIPS.get(selected_goal, CATEGORY_TIPS["General"])
+    if random.random() < 0.3:
+        all_tips = goal_tips + CATEGORY_TIPS["General"]
+        return random.choice(all_tips)
+    return random.choice(goal_tips)
+
+
+# Question 2: Gym Experience
+st.header("2. Experience Level")
+experience_months = st.selectbox(
+    label="How long have you been going to the gym?",
+    options=["less than 6 months", "less than 2 years", "more than 2 years"]
+)
+
+if experience_months == "less than 6 months":
+    user_level = "Beginner"
+    allowed_difficulties = ["Beginner"]
+elif experience_months == "less than 2 years":
+    user_level = "Intermediate"
+    allowed_difficulties = ["Beginner", "Intermediate"]
+else:
+    user_level = "Advanced"
+    allowed_difficulties = ["Beginner", "Intermediate", "Advanced"]
+
+st.info(f"🎯 Assigned Level: **{user_level}** (Exercises filtered up to **{user_level}** level)")
+
+# Question 3: Frequency
+st.header("3. Availability")
 days = st.slider(
     "How many days per week do you want to go to the gym?",
     min_value=1,
     max_value=7,
-    value=3  # default starting position of the slider
+    value=4
 )
 
-# Question 3: Muscle Prioritization
-st.header("3. Muscle Focus")
+# Muscle Mapping UI Focus Categories
+MUSCLE_MAP = {
+    "Chest": ["Chest"],
+    "Back": ["Lats", "Upper Back", "Lower Back"],
+    "Legs": ["Quads", "Hamstrings", "Glutes", "Calves"],
+    "Shoulders": ["Shoulders", "Rear Delts"],
+    "Biceps": ["Biceps"],
+    "Triceps": ["Triceps"],
+    "Core": ["Abs", "Obliques"]
+}
+
+REVERSE_MUSCLE_MAP = {}
+for category, muscles in MUSCLE_MAP.items():
+    for m in muscles:
+        REVERSE_MUSCLE_MAP[m] = category
+
+# Question 4: Muscle Focus
+st.header("4. Muscle Focus")
 priorities = st.multiselect(
     "Are there specific muscle groups you want to prioritize? (Select all that apply)",
-    ["Chest", "Back", "Legs", "Shoulders", "Arms", "Core"]
+    list(MUSCLE_MAP.keys())
 )
 
 st.divider()
 
-# The Action Button
-# For now, it just prints a confirmation message when clicked
+
+# Workout Splits Structure (Updated to include 1 and 7 days)
+def get_split_structure(num_days):
+    splits = {
+        1: [
+            {"name": "Full Body Complete", "targets": ["Chest", "Back", "Legs", "Shoulders", "Biceps", "Triceps", "Core"]}
+        ],
+        2: [
+            {"name": "Full Body A", "targets": ["Chest", "Back", "Legs", "Shoulders", "Biceps", "Triceps", "Core"]},
+            {"name": "Full Body B", "targets": ["Chest", "Back", "Legs", "Shoulders", "Biceps", "Triceps", "Core"]}
+        ],
+        3: [
+            {"name": "Full Body (Upper Push Focus)", "targets": ["Chest", "Shoulders", "Triceps", "Legs", "Core"]},
+            {"name": "Full Body (Upper Pull Focus)", "targets": ["Back", "Biceps", "Legs", "Core"]},
+            {"name": "Full Body (Balanced)", "targets": ["Chest", "Back", "Legs", "Shoulders", "Biceps", "Triceps", "Core"]}
+        ],
+        4: [
+            {"name": "Upper Body A", "targets": ["Chest", "Back", "Shoulders", "Biceps", "Triceps"]},
+            {"name": "Lower Body A", "targets": ["Legs", "Core"]},
+            {"name": "Upper Body B", "targets": ["Chest", "Back", "Shoulders", "Biceps", "Triceps"]},
+            {"name": "Lower Body B", "targets": ["Legs", "Core"]}
+        ],
+        5: [
+            {"name": "Upper Body (Push/Pull)", "targets": ["Chest", "Back", "Shoulders", "Biceps", "Triceps"]},
+            {"name": "Lower Body & Core", "targets": ["Legs", "Core"]},
+            {"name": "Push Focus", "targets": ["Chest", "Shoulders", "Triceps"]},
+            {"name": "Pull Focus", "targets": ["Back", "Biceps", "Core"]},
+            {"name": "Legs & Core", "targets": ["Legs", "Core"]}
+        ],
+        6: [
+            {"name": "Push A (Chest/Shoulders/Triceps)", "targets": ["Chest", "Shoulders", "Triceps"]},
+            {"name": "Pull A (Back/Biceps/Rear Delts)", "targets": ["Back", "Biceps"]},
+            {"name": "Legs & Core A", "targets": ["Legs", "Core"]},
+            {"name": "Push B (Chest/Shoulders/Triceps)", "targets": ["Chest", "Shoulders", "Triceps"]},
+            {"name": "Pull B (Back/Biceps/Rear Delts)", "targets": ["Back", "Biceps"]},
+            {"name": "Legs & Core B", "targets": ["Legs", "Core"]}
+        ],
+        7: [
+            {"name": "Push A (Chest/Shoulders/Triceps)", "targets": ["Chest", "Shoulders", "Triceps"]},
+            {"name": "Pull A (Back/Biceps/Rear Delts)", "targets": ["Back", "Biceps"]},
+            {"name": "Legs & Core A", "targets": ["Legs", "Core"]},
+            {"name": "Push B (Chest/Shoulders/Triceps)", "targets": ["Chest", "Shoulders", "Triceps"]},
+            {"name": "Pull B (Back/Biceps/Rear Delts)", "targets": ["Back", "Biceps"]},
+            {"name": "Legs & Core B", "targets": ["Legs", "Core"]},
+            {"name": "Rest & Active Recovery Day", "targets": []}
+        ]
+    }
+    return splits.get(num_days, splits[4])
+
+
+def select_exercises_for_day(day_target_categories, focus_priorities, allowed_levels):
+    selected_exercises = []
+    target_tags = []
+    priority_tags = []
+
+    for cat in day_target_categories:
+        target_tags.extend(MUSCLE_MAP.get(cat, [cat]))
+
+    for cat in focus_priorities:
+        priority_tags.extend(MUSCLE_MAP.get(cat, [cat]))
+
+    level_filtered_db = {
+        k: v for k, v in EXERCISE_DB.items()
+        if v["difficulty"] in allowed_levels
+    }
+
+    priority_pool = [
+        (name, data) for name, data in level_filtered_db.items()
+        if data["muscle"] in target_tags and data["muscle"] in priority_tags
+    ]
+
+    standard_pool = [
+        (name, data) for name, data in level_filtered_db.items()
+        if data["muscle"] in target_tags and data["muscle"] not in priority_tags
+    ]
+
+    if priority_pool:
+        num_priority = min(3, len(priority_pool))
+        selected_exercises.extend(random.sample(priority_pool, num_priority))
+
+    total_workout_target = 6 if priority_pool else 4
+    needed = total_workout_target - len(selected_exercises)
+
+    if needed > 0 and standard_pool:
+        num_standard = min(needed, len(standard_pool))
+        selected_exercises.extend(random.sample(standard_pool, num_standard))
+
+    return selected_exercises
+
+
+# Smart Swap Function
+def swap_exercise(day_idx, ex_idx, target_muscle, current_name, allowed_levels):
+    st.session_state["swap_message"] = None
+
+    existing_exercises = set()
+    if "generated_plan" in st.session_state:
+        for day in st.session_state["generated_plan"]:
+            for name, _ in day["exercises"]:
+                existing_exercises.add(name)
+
+    # Candidate search for specific target muscle
+    candidates = [
+        (name, data) for name, data in EXERCISE_DB.items()
+        if data["muscle"] == target_muscle
+           and data["difficulty"] in allowed_levels
+           and name not in existing_exercises
+    ]
+
+    # Fallback to wider parent muscle category
+    if not candidates:
+        parent_group = REVERSE_MUSCLE_MAP.get(target_muscle, target_muscle)
+        group_muscles = MUSCLE_MAP.get(parent_group, [target_muscle])
+        candidates = [
+            (name, data) for name, data in EXERCISE_DB.items()
+            if data["muscle"] in group_muscles
+               and data["difficulty"] in allowed_levels
+               and name not in existing_exercises
+        ]
+
+    if candidates:
+        new_exercise = random.choice(candidates)
+        st.session_state["generated_plan"][day_idx]["exercises"][ex_idx] = new_exercise
+        st.session_state["swap_message"] = ("success", f"Swapped for: **{new_exercise[0]}**!")
+    else:
+        st.session_state["swap_message"] = ("warning", "No other exercise available for your fitness level and goals!")
+
+
+# Action Button: Generate Workout
 if st.button("Generate My Plan", type="primary"):
-    st.success("Inputs received successfully! Ready for the next step.")
+    split = get_split_structure(days)
+    plan_data = []
+
+    for day_info in split:
+        exercises = select_exercises_for_day(day_info["targets"], priorities, allowed_difficulties)
+        plan_data.append({
+            "name": day_info["name"],
+            "exercises": exercises
+        })
+
+    st.session_state["generated_plan"] = plan_data
+    st.session_state["current_user_level"] = user_level
+    st.session_state["current_priorities"] = priorities
+    st.session_state["current_goal"] = goal
+    st.session_state["daily_tip"] = get_random_tip_for_goal(goal)
+    st.session_state["tip_goal"] = goal
+    st.session_state["swap_message"] = None
+
+# Display Output Block
+if "generated_plan" in st.session_state:
+    plan = st.session_state["generated_plan"]
+    user_goal = st.session_state["current_goal"]
+    prescription = GOAL_PARAMS.get(user_goal, GOAL_PARAMS["Build Muscle"])
+
+    # Toast notification handler for swapping
+    if st.session_state.get("swap_message"):
+        msg_type, msg_text = st.session_state["swap_message"]
+        if msg_type == "success":
+            st.toast(msg_text, icon="🔄")
+        elif msg_type == "warning":
+            st.toast(msg_text, icon="⚠️")
+
+    # Header and info
+    st.subheader("🗓️ Your Scheduled Workout Plan")
+    st.caption(f"Configured for **{st.session_state['current_user_level']}** level | Goal: **{user_goal}**")
+
+    # Goal-Specific Tip Card (Grammatically Correct Header)
+    if "daily_tip" not in st.session_state or st.session_state.get("tip_goal") != user_goal:
+        st.session_state["daily_tip"] = get_random_tip_for_goal(user_goal)
+        st.session_state["tip_goal"] = user_goal
+
+    # Map selected goals to proper grammatical phrasing
+    GOAL_HEADER_MAP = {
+        "Build Muscle": "Building Muscle",
+        "Increase Strength": "Increasing Strength",
+        "Lose Body Fat / Toning": "Losing Body Fat / Toning",
+        "Improve Endurance": "Improving Endurance"
+    }
+
+    display_goal = GOAL_HEADER_MAP.get(user_goal, user_goal)
+
+    col1, col2 = st.columns([4, 1], vertical_alignment="bottom")
+    with col1:
+        st.markdown(f"### 💡 Tip for {display_goal}")
+    with col2:
+        if st.button("🎲 New Tip", use_container_width=True):
+            st.session_state["daily_tip"] = get_random_tip_for_goal(user_goal)
+            st.rerun()
+
+    st.info(st.session_state["daily_tip"])
+
+    if st.session_state["current_priorities"]:
+        st.info(
+            f"⚡ **Priority Volume Boost:** Extra exercises included for **{', '.join(st.session_state['current_priorities'])}**.")
+
+    # Render Workout Days
+    for day_idx, day_data in enumerate(plan):
+        with st.expander(f"**Day {day_idx + 1}: {day_data['name']}**", expanded=True):
+            if not day_data["exercises"]:
+                st.write("Rest day or active recovery.")
+            else:
+                for ex_idx, (name, details) in enumerate(day_data["exercises"]):
+                    col1, col2 = st.columns([5, 1])
+
+                    with col1:
+                        is_priority = any(details["muscle"] in MUSCLE_MAP.get(cat, []) for cat in
+                                          st.session_state["current_priorities"])
+                        badge = "⭐ Priority Boost" if is_priority else ""
+
+                        st.markdown(f"### 🏋️ {name} {f'`{badge}`' if badge else ''}")
+
+                        # Goal Prescriptions
+                        st.markdown(
+                            f"📋 **Target:** `{prescription['sets']} sets` × `{prescription['reps']}` "
+                            f"| ⏱️ **Rest:** `{prescription['rest']}`"
+                        )
+                        st.markdown(
+                            f"**Muscle:** `{details['muscle']}` | "
+                            f"**Equipment:** `{details['equipment']}` | "
+                            f"**Difficulty:** `{details['difficulty']}`"
+                        )
+                        st.caption(details["description"])
+
+                    with col2:
+                        st.write("")  # Spacer
+                        st.button(
+                            "🔄 Swap",
+                            key=f"swap_{day_idx}_{ex_idx}",
+                            on_click=swap_exercise,
+                            args=(day_idx, ex_idx, details["muscle"], name, allowed_difficulties)
+                        )
+                    st.divider()
