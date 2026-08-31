@@ -1,3 +1,4 @@
+# AI USAGE: this databank was almost entirely created by ai, I just prompted, gave the basic structure/requirements and corrected some mistakes, since I consider this a very repetitive task. I wanted to focus on my own programming more so I decided to save some time here :)
 EXERCISE_DB = {
     # CHEST EXERCISES
     "Barbell Bench Press": {
