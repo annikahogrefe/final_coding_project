@@ -27,11 +27,11 @@ PyFit is an interactive, intelligent fitness application built with Python and S
 
 ## 🧠 Workflow/ Progress 
 
-   30th June: Inital setup for this project.
-   21th July: Actually setting it up correctly and starting to work on my databank of expercises.
-   28th July: Starting some actual code writing in app.py and adding more exercises to the databank. Running a demo version for the first time.
-   31th August: Adding a lot more features to the app itself + even more exercises. Finilasing the project.
-   1th October: Creating a ReadMe.
+   - 30th June: Inital setup for this project.
+   - 21th July: Actually setting it up correctly and starting to work on my databank of expercises.
+   - 28th July: Starting some actual code writing in app.py and adding more exercises to the databank. Running a demo version for the first time.
+   - 31th August: Adding a lot more features to the app itself + even more exercises. Finilasing the project.
+   - 1th October: Creating a ReadMe.
 
 ***
 
